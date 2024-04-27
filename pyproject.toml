@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "cash-fees"
+version = "0.1.0"
+description = "Rest API для веб-сервиса групповых денежных сборов."
+authors = ["Vladislav Yaremenko <vlad.yaremenko.98@yandex.ru>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = "^5.0.4"
+djangorestframework = "^3.15.1"
+djoser = "^2.2.2"
+djangorestframework-simplejwt = "^5.3.1"
+celery = "^5.4.0"
+psycopg2-binary = "^2.9.9"
+python-dotenv = "^1.0.1"
+pillow = "^10.3.0"
+drf-spectacular = "^0.27.2"
+django-autoslug = "^1.9.9"
+pytils = "^0.4.1"
+django-resized = "^1.0.2"
+django-filter = "^24.2"
+
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13.2"
+pre-commit = "^3.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
