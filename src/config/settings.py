@@ -36,7 +36,9 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'drf_spectacular',
+    'users.apps.UsersConfig',
     'core.apps.CoreConfig',
     'organizations.apps.OrganizationsConfig',
     'collectings.apps.CollectingsConfig',
@@ -54,6 +56,8 @@ MIDDLEWARE = (
 )
 
 ROOT_URLCONF = 'config.urls'
+
+AUTH_USER_MODEL = 'users.User'
 
 TEMPLATES = (
     {
@@ -118,6 +122,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+        ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    )
 }
 
 SIMPLE_JWT = {
@@ -134,6 +144,5 @@ if DEBUG:
     STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
 else:
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

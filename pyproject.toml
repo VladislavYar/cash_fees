@@ -21,6 +21,7 @@ django-autoslug = "^1.9.9"
 pytils = "^0.4.1"
 django-resized = "^1.0.2"
 django-filter = "^24.2"
+youtube-urls-validator = "^0.0.1"
 
 
 [tool.poetry.group.dev.dependencies]

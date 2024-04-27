@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django_resized import ResizedImageField
 
 from core.constants import (MAX_IMAGE_SIZE, MAX_LEN_NAME, MAX_LEN_SLUG,
-                            MIN_LEN_DESCRIPTION, MIN_LEN_NAME)
+                            MIN_LEN_DESCRIPTION)
 
 User = get_user_model()
 
@@ -20,7 +20,6 @@ class BaseModel(models.Model):
         verbose_name=_('Название'),
         help_text=_('Название'),
         db_comment=_('Название'),
-        validators=(MinLengthValidator(MIN_LEN_NAME),)
     )
     slug = AutoSlugField(
         populate_from='name',

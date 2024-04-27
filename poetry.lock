@@ -1449,7 +1449,18 @@ files = [
     {file = "wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"},
 ]
 
+[[package]]
+name = "youtube-urls-validator"
+version = "0.0.1"
+description = "Validator for YouTube URLs."
+optional = false
+python-versions = "*"
+files = [
+    {file = "youtube_urls_validator-0.0.1-py3-none-any.whl", hash = "sha256:27bf2ab850e974c9b5488e89d327129a0ff980f673848555d27f5ef7e7e45750"},
+    {file = "youtube_urls_validator-0.0.1.tar.gz", hash = "sha256:b3fdc394e971b795106812108b5f8002385febb86c10926867b7e4967a1ecd18"},
+]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "d446af7973b9178d2b208bbbc2fb41629b466a7e78dbc74493de81a996b82d67"
+content-hash = "1bc37e8ecd126ddbdc0e64a1513b28a9522966236c4f1d51ae94909a9185a615"

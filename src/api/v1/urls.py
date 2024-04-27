@@ -1,18 +1,24 @@
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework import routers
 
-from api.v1.views import (DefaultCoverView, OccasionView, OrganizationView,
-                          ProblemView, RegionView)
+from api.v1.views import (CollectViewSet, DefaultCoverView, OccasionView,
+                          OrganizationView, PaymentView, ProblemView,
+                          RegionView)
 
 app_name = 'v1'
 
+router = routers.SimpleRouter()
+router.register(r'collectings', CollectViewSet)
 
 urlpatterns = (
+    path('', include(router.urls)),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path(
         'docs/', SpectacularSwaggerView.as_view(url_name='api:v1:schema'),
         name='docs',
         ),
+    path('payments/', PaymentView.as_view(), name='payments'),
     path('occansions/', OccasionView.as_view(), name='occansions'),
     path('organizations/', OrganizationView.as_view(), name='organizations'),
     path('regions/', RegionView.as_view(), name='regions'),

@@ -77,6 +77,12 @@ class Collect(CollectOrganizationBaseModel, CollectPaymentBaseModel):
         null=True,
         blank=True,
         )
+    is_active = models.BooleanField(
+        verbose_name=_('Активность сбора'),
+        help_text=_('Активность сбора'),
+        db_comment=_('Активность сбора'),
+        default=True,
+        )
     url_video = models.URLField(
         verbose_name=_('URL видео'),
         help_text=_('URL видео'),
@@ -123,7 +129,8 @@ class Payment(CollectPaymentBaseModel):
         verbose_name=_('Комментарий'),
         help_text=_('Комментарий'),
         db_comment=_('Комментарий'),
-        null=True, blank=True
+        null=True,
+        blank=True,
         )
     payment_amount = models.PositiveIntegerField(
         verbose_name=_('Сумма платежа'),
