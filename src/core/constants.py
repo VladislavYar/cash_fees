@@ -1,0 +1,6 @@
+MIN_LEN_NAME = 10
+MAX_LEN_NAME = 50
+MIN_LEN_DESCRIPTION = 5
+MAX_LEN_SLUG = 100
+DISPLAY_IMAGE_ADMIN = '<img src="{}" style="min-width:150px;max-width:150px;">'
+MAX_IMAGE_SIZE = (1500, 1500)
