@@ -90,6 +90,28 @@ DATABASES = {
     }
 }
 
+REDIS_LOCATION = (
+    f'redis://{os.getenv('REDIS_HOST', default='localhost')}'
+    f':{os.getenv('REDIS_PORT', default='6379')}'
+    )
+
+CELERY_BROKER_URL = f'{REDIS_LOCATION}/0'
+CELERY_RESULT_BACKEND = f'{REDIS_LOCATION}/0'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 5 * 60
+CELERY_ACCEPT_CONTENT = ('application/json',)
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_LOCATION,
+    }
+}
+
 AUTH_PASSWORD_VALIDATORS = (
     {
         'NAME': (
@@ -127,7 +149,7 @@ REST_FRAMEWORK = {
         ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    )
+    ),
 }
 
 SIMPLE_JWT = {
@@ -146,3 +168,6 @@ else:
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST_USER = None

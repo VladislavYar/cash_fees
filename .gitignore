@@ -162,3 +162,6 @@ cython_debug/
 images/
 covers/
 default_cover/
+test_images/
+celerybeat-schedule*
+poetry.lock

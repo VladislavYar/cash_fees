@@ -126,6 +126,12 @@ class Payment(CollectPaymentBaseModel):
             MaxValueValidator(MAX_PAYMENT_AMOUNT),
             )
     )
+    status = models.BooleanField(
+        default=False,
+        verbose_name=_('Статус платежа'),
+        help_text=_('Статус платежа'),
+        db_comment=_('Статус платежа'),
+    )
 
     class Meta:
         verbose_name = _('Платёж')

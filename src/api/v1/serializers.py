@@ -1,7 +1,7 @@
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
-from django.db.models import Model, Sum
+from django.db.models import F, Model, Sum
 from django.utils.timezone import localdate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -89,8 +89,19 @@ class RegionSerializer(BaseSerializer):
 class OrganizationSerializer(CollectOrganizationBaseSerializer):
     """Сериализатор некоммерческих организаций."""
 
+    count_amount = serializers.SerializerMethodField()
+
     class Meta(CollectOrganizationBaseSerializer.Meta):
         model = Organization
+        fields = CollectOrganizationBaseSerializer.Meta.fields + [
+            'count_amount',
+        ]
+
+    def get_count_amount(self, obj: Organization) -> int | None:
+        """Собранная сумма."""
+        return obj.collectings.aggregate(
+                count_amount=Sum(F('payments__payment_amount'))
+            )['count_amount']
 
 
 class PaymentSerializer(CollectPaymentBaseSerializer):
@@ -107,7 +118,16 @@ class PaymentSerializer(CollectPaymentBaseSerializer):
             'collect',
             'comment',
             'payment_amount',
+            'status',
         ]
+        read_only_fields = ('status',)
+
+    def validate_collect(self, value: Collect) -> Collect:
+        if not value.is_active:
+            raise serializers.ValidationError(
+                _('Групповой денежный сбор завершён.')
+            )
+        return value
 
 
 class CollectUpdateSerializer(
@@ -179,7 +199,6 @@ class CollectCreateSerializer(
         queryset=Occasion.objects.all(),
         slug_field='slug',
         )
-    payments = PaymentSerializer(many=True)
     count_amount = serializers.SerializerMethodField()
     count_donaters = serializers.SerializerMethodField()
 
@@ -188,17 +207,16 @@ class CollectCreateSerializer(
             CollectUpdateSerializer.Meta.fields + [
                 'organization',
                 'occasion',
-                'payments',
                 'count_amount',
                 'count_donaters',
             ]
         )
 
-    def get_count_amount(self, obj: Collect) -> int:
+    def get_count_amount(self, obj: Collect) -> int | None:
         """Собранная сумма."""
         return obj.payments.aggregate(
-            Sum('payment_amount')
-            )['payment_amount__sum']
+            count_amount=Sum('payment_amount')
+            )['count_amount']
 
     def get_count_donaters(self, obj: Collect) -> int:
         """Количество пожертвований."""
@@ -212,10 +230,12 @@ class CollectResponseSerializer(
 
     organization = OrganizationSerializer()
     occasion = OccasionSerializer()
+    payments = PaymentSerializer(many=True)
 
     class Meta(CollectCreateSerializer.Meta):
         fields = (
             CollectCreateSerializer.Meta.fields + [
                 'is_active',
+                'payments',
             ]
         )

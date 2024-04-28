@@ -31,8 +31,8 @@ migrate: # Выполнить миграции Django
 createsuperuser: # Создать супер пользователя
 	$(command) src/manage.py createsuperuser --noinput
 
-# test-data: # Создаёт тестовые данные
-# 	$(command) src/manage.py test_data
+test-data: # Создаёт тестовые данные
+	$(command) src/manage.py test_data
 
 project-init: # Инициализировать проект
 	make clear-volumes start-containers-init
@@ -44,13 +44,19 @@ project-stop: # Остановить контейнеры
 	docker compose -f ./infra/docker-compose.yml  --env-file ./infra/.env down;
 
 project-init-in-container: # Инициализировать проект в контейнере
-	make migrate createsuperuser start-server
+	make migrate createsuperuser test-data start-server
 
 project-start-in-container: # Запустить проект в контейнере
 	make start-server
 
 project-init-dev: # Инициализировать проект для разработки
-	make clear-volumes-dev start-containers-dev migrate createsuperuser start-server
+	make clear-volumes-dev start-containers-dev migrate createsuperuser test-data start-server
 
 project-start-dev: # Запустить проект для разработки
 	make start-containers-dev start-server
+
+celery-worker-start-dev: # Запуск worker для разработки
+	cd src/ && celery -A config worker -l debug --without-gossip --without-mingle --without-heartbeat -Ofair --pool=solo
+
+celery-beat-start-dev: # Запуск beat для разработки
+	cd src/ && celery -A config beat --loglevel=DEBUG

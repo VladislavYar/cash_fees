@@ -1,4 +1,6 @@
 from django.db.models import QuerySet
+from djoser.conf import settings
+from djoser.views import UserViewSet
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.generics import ListAPIView, ListCreateAPIView
@@ -7,8 +9,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-from api.v1.filters import OrganizationFilter
+from api.v1.filters import CollectFilter, OrganizationFilter
 from api.v1.paginations import CollectPagination, OrganizationPagination
 from api.v1.permissions import IsAuthenticatedOrReadOnlyAndUpdateDeleteIsOwner
 from api.v1.serializers import (CollectCreateSerializer,
@@ -17,9 +21,34 @@ from api.v1.serializers import (CollectCreateSerializer,
                                 DefaultCoverSerializer, OccasionSerializer,
                                 OrganizationSerializer, PaymentSerializer,
                                 ProblemSerializer, RegionSerializer)
+from api.v1.tasks import send_mail_celery
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from organizations.models import Organization, Problem, Region
 from utils.decorators import change_serializer_class
+
+
+@extend_schema_view(
+    create=extend_schema(
+        responses={200: settings.SERIALIZERS.user},
+        summary='Создание нового пользователя',
+        description='Создаёт нового пользователя',
+        tags=('Пользователь',),
+    ),
+)
+class CastomUserViewSet(UserViewSet):
+    """Кастомизация swagger-a."""
+
+
+@extend_schema_view(
+    post=extend_schema(
+        responses={201: TokenObtainPairSerializer},
+        summary='Получение токена',
+        description='Отдаёт токен',
+        tags=('Пользователь',),
+    ),
+)
+class CastomTokenObtainPairView(TokenObtainPairView):
+    """Кастомизация swagger-a."""
 
 
 @extend_schema_view(
@@ -143,6 +172,7 @@ class CollectViewSet(ModelViewSet):
     queryset = Collect.objects.all()
     serializer_class = CollectResponseSerializer
     pagination_class = CollectPagination
+    filterset_class = CollectFilter
     permission_classes = (
         IsAuthenticatedOrReadOnlyAndUpdateDeleteIsOwner,
         )
@@ -164,8 +194,16 @@ class CollectViewSet(ModelViewSet):
         name_field_filter='slug',
     )
     def create(self, request: Request, *args, **kwargs) -> Response:
-        """Изменяет сериализатор вывода."""
-        return super().create(request, *args, **kwargs)
+        """
+        Изменяет сериализатор вывода и создаёт task на отправку сообщения.
+        """
+        response = super().create(request, *args, **kwargs)
+        send_mail_celery.delay(
+            'Create collect',
+            f'Групповой денежный сбор "{response.data['name']}" создан.',
+            (request.user.email,)
+        )
+        return response
 
     @change_serializer_class(
         model=Collect,
@@ -187,8 +225,8 @@ class CollectViewSet(ModelViewSet):
 @extend_schema_view(
     get=extend_schema(
         responses={200: PaymentSerializer(many=True)},
-        summary='Список платежей для сбора',
-        description='Выводит список платежей для сбора',
+        summary='Список личных платежей для сбора',
+        description='Выводит список личных платежей для сбора',
         tags=('Групповой денежный сбор',),
     ),
     post=extend_schema(
@@ -208,3 +246,13 @@ class PaymentView(ListCreateAPIView):
     def get_queryset(self) -> QuerySet[Payment]:
         """Отдаёт платежи для сбора пользователя."""
         return self.queryset.filter(user=self.request.user)
+
+    def create(self, request: Request, *args, **kwargs) -> Response:
+        """Cоздаёт task на отправку сообщения."""
+        response = super().create(request, *args, **kwargs)
+        send_mail_celery.delay(
+            'Create payment',
+            'Платеж для сбора создан.',
+            (request.user.email,)
+        )
+        return response

@@ -73,15 +73,15 @@ class CollectPaymentBaseModel(models.Model):
         )
     user_first_name = models.CharField(
         max_length=User._meta.get_field('first_name').max_length,
-        verbose_name=_('Имя пльзователя'),
-        help_text=_('Имя пльзователя'),
-        db_comment=_('Имя пльзователя'),
+        verbose_name=_('Имя'),
+        help_text=_('Имя'),
+        db_comment=_('Имя'),
         )
     user_last_name = models.CharField(
         max_length=User._meta.get_field('last_name').max_length,
-        verbose_name=_('Фамилия пользователя'),
-        help_text=_('Фамилия пользователя'),
-        db_comment=_('Фамилия пользователя'),
+        verbose_name=_('Фамилия'),
+        help_text=_('Фамилия'),
+        db_comment=_('Фамилия'),
     )
     create_datetime = models.DateTimeField(
         auto_now_add=True,

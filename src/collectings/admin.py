@@ -83,6 +83,7 @@ class PaymentAdmin(CollectPaymentBaseAdmin):
     """Отображение в админ панели платежа для сбора."""
 
     list_filter = (
+        'status',
         'collect__name',
         'user__email',
         )
@@ -95,7 +96,8 @@ class PaymentAdmin(CollectPaymentBaseAdmin):
     def get_list_display(self, request: WSGIRequest) -> list[str]:
         """Расширяет поле вывода списка элементов."""
         return super().get_list_display(request) + [
-            'comment',
+            'status',
             'collect',
             'payment_amount',
+            'comment',
             ]

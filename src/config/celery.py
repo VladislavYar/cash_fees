@@ -1,0 +1,20 @@
+import os
+
+from celery import Celery
+from celery.schedules import crontab
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+app = Celery('config')
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
+
+app.conf.beat_schedule = {
+    'status_true_payment': {
+        'task': 'api.v1.tasks.status_true_payment',
+        'schedule': crontab(minute='*/1'),
+    },
+    'check_close_datetime_collect': {
+        'task': 'api.v1.tasks.check_close_datetime_collect',
+        'schedule': crontab(minute=0, hour=0),
+    }
+}

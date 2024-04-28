@@ -2,6 +2,8 @@ version: '3'
 
 volumes:
   pg_data:
+  redis_data:
+  redis.conf:
   static:
   media:
 
@@ -22,6 +24,21 @@ services:
     ports:
       - ${DOCKER_COMPOSER_PORT_DB:-5432:5432}
 
+  redis:
+    image: redis:alpine
+    env_file: .env
+    restart: always
+    volumes:
+      - redis_data:/root/redis
+      - redis.conf:/usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    ports:
+      - ${DOCKER_COMPOSER_PORT_REDIS:-6379:6379}
+
   backend:
     restart: always
     build:
@@ -30,6 +47,8 @@ services:
     env_file: .env
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     command: bash -c "make project-init-in-container"
     volumes:
