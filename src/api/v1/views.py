@@ -11,13 +11,15 @@ from rest_framework.viewsets import ModelViewSet
 from api.v1.filters import OrganizationFilter
 from api.v1.paginations import CollectPagination, OrganizationPagination
 from api.v1.permissions import IsAuthenticatedOrReadOnlyAndUpdateDeleteIsOwner
-from api.v1.serializers import (CollectCreateSerializer, CollectSerializer,
+from api.v1.serializers import (CollectCreateSerializer,
+                                CollectResponseSerializer,
                                 CollectUpdateSerializer,
                                 DefaultCoverSerializer, OccasionSerializer,
                                 OrganizationSerializer, PaymentSerializer,
                                 ProblemSerializer, RegionSerializer)
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from organizations.models import Organization, Problem, Region
+from utils.decorators import change_serializer_class
 
 
 @extend_schema_view(
@@ -99,31 +101,31 @@ class DefaultCoverView(ListAPIView):
 
 @extend_schema_view(
     list=extend_schema(
-        responses={200: CollectSerializer(many=True)},
+        responses={200: CollectResponseSerializer(many=True)},
         summary='Список групповых денежных сборов',
         description='Выводит список групповых денежных сборов',
         tags=('Групповой денежный сбор',),
     ),
     retrieve=extend_schema(
-        responses={200: CollectSerializer()},
+        responses={200: CollectResponseSerializer()},
         summary='Получить групповой денежный сбор',
         description='Отдаёт групповой денежный сбор',
         tags=('Групповой денежный сбор',),
     ),
     create=extend_schema(
-        responses={201: CollectSerializer()},
+        responses={201: CollectResponseSerializer()},
         summary='Создать групповой денежный сбор',
         description='Создаёт групповой денежный сбор',
         tags=('Групповой денежный сбор',),
     ),
     update=extend_schema(
-        responses={200: CollectSerializer()},
+        responses={200: CollectResponseSerializer()},
         summary='Обновить групповой денежный сбор',
         description='Обновляет групповой денежный сбор',
         tags=('Групповой денежный сбор',),
     ),
     partial_update=extend_schema(
-        responses={200: CollectSerializer()},
+        responses={200: CollectResponseSerializer()},
         summary='Обновить групповой денежный сбор',
         description='Обновляет групповой денежный сбор',
         tags=('Групповой денежный сбор',),
@@ -139,14 +141,14 @@ class CollectViewSet(ModelViewSet):
     """View вывода списка групповых денежных сборов."""
 
     queryset = Collect.objects.all()
-    serializer_class = CollectSerializer
+    serializer_class = CollectResponseSerializer
     pagination_class = CollectPagination
     permission_classes = (
         IsAuthenticatedOrReadOnlyAndUpdateDeleteIsOwner,
         )
     lookup_field = 'slug'
 
-    def get_serializer_class(self) -> ModelSerializer:
+    def get_serializer_class(self, *args, **kwargs) -> ModelSerializer:
         """Изменяет сериализатор в зависимости от запроса."""
         serializer_class = self.serializer_class
         method = self.request.method
@@ -155,6 +157,24 @@ class CollectViewSet(ModelViewSet):
         elif method == 'POST':
             serializer_class = CollectCreateSerializer
         return serializer_class
+
+    @change_serializer_class(
+        model=Collect,
+        serializer=CollectResponseSerializer,
+        name_field_filter='slug',
+    )
+    def create(self, request: Request, *args, **kwargs) -> Response:
+        """Изменяет сериализатор вывода."""
+        return super().create(request, *args, **kwargs)
+
+    @change_serializer_class(
+        model=Collect,
+        serializer=CollectResponseSerializer,
+        name_field_filter='slug',
+    )
+    def update(self, request: Request, *args, **kwargs) -> Response:
+        """Изменяет сериализатор вывода."""
+        return super().update(request, *args, **kwargs)
 
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         """Делает групповой денежный сбор неактивным."""

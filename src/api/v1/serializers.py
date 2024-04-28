@@ -1,7 +1,7 @@
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
-from django.db.models import Model
+from django.db.models import Model, Sum
 from django.utils.timezone import localdate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -9,6 +9,7 @@ from youtube_urls_validator import validate_url
 from youtube_urls_validator.utils.exceptions import (
     HostNotInPossibleHostsError, InvalidSchemeError)
 
+from api.v1.fields import Base64ImageField, Base64ImageOrURIField
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from organizations.models import Organization, Problem, Region
 
@@ -43,11 +44,12 @@ class CollectPaymentBaseSerializer(serializers.ModelSerializer):
     Базовый сериализатор групповых денежных сборов/платежей для сбора.
     """
 
-    user = serializers.SlugRelatedField(read_only=True, slug_field='email')
-
     class Meta:
-        fields = ['user', 'create_datetime']
-        read_only_fields = ['create_datetime']
+        fields = [
+            'user_first_name',
+            'user_last_name',
+            'create_datetime',
+            ]
 
     def create(self, validated_data: dict) -> Model:
         """Добавляет поле с пользователем."""
@@ -91,11 +93,33 @@ class OrganizationSerializer(CollectOrganizationBaseSerializer):
         model = Organization
 
 
+class PaymentSerializer(CollectPaymentBaseSerializer):
+    """Сериализатор платежей для сбора."""
+
+    collect = serializers.SlugRelatedField(
+        queryset=Collect.objects.all(),
+        slug_field='slug',
+        )
+
+    class Meta(CollectPaymentBaseSerializer.Meta):
+        model = Payment
+        fields = CollectPaymentBaseSerializer.Meta.fields + [
+            'collect',
+            'comment',
+            'payment_amount',
+        ]
+
+
 class CollectUpdateSerializer(
     CollectOrganizationBaseSerializer,
     CollectPaymentBaseSerializer,
 ):
     """Сериализатор обновления групповых денежных сборов."""
+
+    image = Base64ImageField(allow_null=True, required=False)
+    cover = Base64ImageOrURIField(
+        {'model': DefaultCover, 'check_field': 'default_cover'}
+        )
 
     class Meta(
         CollectOrganizationBaseSerializer.Meta,
@@ -103,9 +127,8 @@ class CollectUpdateSerializer(
     ):
         model = Collect
         fields = (
-            CollectOrganizationBaseSerializer.Meta.fields + [
-                'user_first_name',
-                'user_last_name',
+            CollectOrganizationBaseSerializer.Meta.fields +
+            CollectPaymentBaseSerializer.Meta.fields + [
                 'image',
                 'url_video',
                 'required_amount',
@@ -146,7 +169,7 @@ class CollectUpdateSerializer(
 class CollectCreateSerializer(
     CollectUpdateSerializer
 ):
-    """Сериализатор групповых денежных сборов."""
+    """Сериализатор создания групповых денежных сборов."""
 
     organization = serializers.SlugRelatedField(
         queryset=Organization.objects.all(),
@@ -156,58 +179,43 @@ class CollectCreateSerializer(
         queryset=Occasion.objects.all(),
         slug_field='slug',
         )
+    payments = PaymentSerializer(many=True)
+    count_amount = serializers.SerializerMethodField()
+    count_donaters = serializers.SerializerMethodField()
 
     class Meta(CollectUpdateSerializer.Meta):
         fields = (
-            CollectUpdateSerializer.Meta.fields + [
-                'organization',
-                'occasion'
-            ]
-        )
-
-
-class CollectSerializer(
-    CollectUpdateSerializer
-):
-    """Сериализатор групповых денежных сборов."""
-
-    organization = serializers.SlugRelatedField(
-        queryset=Organization.objects.all(),
-        slug_field='slug',
-        )
-    occasion = serializers.SlugRelatedField(
-        queryset=Occasion.objects.all(),
-        slug_field='slug',
-        )
-
-    class Meta(CollectUpdateSerializer.Meta):
-        fields = (
-            CollectPaymentBaseSerializer.Meta.fields +
             CollectUpdateSerializer.Meta.fields + [
                 'organization',
                 'occasion',
-                'is_active',
-            ]
-        )
-        read_only_fields = (
-            CollectPaymentBaseSerializer.Meta.read_only_fields + [
-                'is_active',
+                'payments',
+                'count_amount',
+                'count_donaters',
             ]
         )
 
+    def get_count_amount(self, obj: Collect) -> int:
+        """Собранная сумма."""
+        return obj.payments.aggregate(
+            Sum('payment_amount')
+            )['payment_amount__sum']
 
-class PaymentSerializer(CollectPaymentBaseSerializer):
-    """Сериализатор платежей для сбора."""
+    def get_count_donaters(self, obj: Collect) -> int:
+        """Количество пожертвований."""
+        return obj.payments.values('user').distinct().count()
 
-    collect = serializers.SlugRelatedField(
-        queryset=Collect.objects.all(),
-        slug_field='slug',
+
+class CollectResponseSerializer(
+    CollectCreateSerializer
+):
+    """Сериализатор вывода групповых денежных сборов."""
+
+    organization = OrganizationSerializer()
+    occasion = OccasionSerializer()
+
+    class Meta(CollectCreateSerializer.Meta):
+        fields = (
+            CollectCreateSerializer.Meta.fields + [
+                'is_active',
+            ]
         )
-
-    class Meta(CollectPaymentBaseSerializer.Meta):
-        model = Payment
-        fields = CollectPaymentBaseSerializer.Meta.fields + [
-            'collect',
-            'comment',
-            'payment_amount',
-        ]

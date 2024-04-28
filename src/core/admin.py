@@ -36,3 +36,13 @@ class CollectOrganizationBaseAdmin(BaseAdmin):
     def display_cover(self, obj: Model) -> SafeText:
         """Выводит обложку в списке элементов."""
         return format_html(DISPLAY_IMAGE_ADMIN.format(obj.cover.url))
+
+
+class CollectPaymentBaseAdmin(admin.ModelAdmin):
+    """Базовая модель админ панели сборов/платежа для сбора."""
+
+    list_display = [
+        'user',
+        'user_first_name',
+        'user_last_name',
+    ]

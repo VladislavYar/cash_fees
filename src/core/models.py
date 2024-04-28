@@ -71,6 +71,18 @@ class CollectPaymentBaseModel(models.Model):
         db_comment=_('Пользователь'),
         null=True,
         )
+    user_first_name = models.CharField(
+        max_length=User._meta.get_field('first_name').max_length,
+        verbose_name=_('Имя пльзователя'),
+        help_text=_('Имя пльзователя'),
+        db_comment=_('Имя пльзователя'),
+        )
+    user_last_name = models.CharField(
+        max_length=User._meta.get_field('last_name').max_length,
+        verbose_name=_('Фамилия пользователя'),
+        help_text=_('Фамилия пользователя'),
+        db_comment=_('Фамилия пользователя'),
+    )
     create_datetime = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('Дата и время создания'),

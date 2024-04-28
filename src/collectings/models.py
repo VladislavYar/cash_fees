@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -10,8 +9,6 @@ from core.constants import MAX_IMAGE_SIZE
 from core.models import (BaseModel, CollectOrganizationBaseModel,
                          CollectPaymentBaseModel)
 from organizations.models import Organization
-
-User = get_user_model()
 
 
 class Occasion(BaseModel):
@@ -41,18 +38,6 @@ class DefaultCover(BaseModel):
 class Collect(CollectOrganizationBaseModel, CollectPaymentBaseModel):
     """Модель группового денежного сбора."""
 
-    user_first_name = models.CharField(
-        max_length=User._meta.get_field('first_name').max_length,
-        verbose_name=_('Имя пльзователя'),
-        help_text=_('Имя пльзователя'),
-        db_comment=_('Имя пльзователя'),
-        )
-    user_last_name = models.CharField(
-        max_length=User._meta.get_field('last_name').max_length,
-        verbose_name=_('Фамилия пользователя'),
-        help_text=_('Фамилия пользователя'),
-        db_comment=_('Фамилия пользователя'),
-    )
     organization = models.ForeignKey(
         to=Organization,
         on_delete=models.PROTECT,

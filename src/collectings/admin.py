@@ -5,7 +5,8 @@ from django.utils.safestring import SafeText
 
 from collectings.constants import DISPLAY_VIDEO_ADMIN
 from collectings.models import Collect, DefaultCover, Occasion, Payment
-from core.admin import BaseAdmin, CollectOrganizationBaseAdmin
+from core.admin import (BaseAdmin, CollectOrganizationBaseAdmin,
+                        CollectPaymentBaseAdmin)
 from core.constants import DISPLAY_IMAGE_ADMIN
 
 
@@ -35,7 +36,7 @@ class DefaultCoverAdmin(BaseAdmin):
 
 
 @admin.register(Collect)
-class CollectAdmin(CollectOrganizationBaseAdmin):
+class CollectAdmin(CollectOrganizationBaseAdmin, CollectPaymentBaseAdmin):
     """Отображение в админ панели группового денежного сбора."""
 
     list_filter = (
@@ -46,12 +47,14 @@ class CollectAdmin(CollectOrganizationBaseAdmin):
 
     def get_list_display(self, request: WSGIRequest) -> list[str]:
         """Расширяет поле вывода списка элементов."""
-        return super().get_list_display(request) + [
-            'display_image',
-            'display_video',
-            'user',
-            'is_active',
+        return (
+            CollectPaymentBaseAdmin.list_display +
+            super().get_list_display(request) + [
+                'display_image',
+                'display_video',
+                'is_active',
             ]
+        )
 
     @admin.display(
             description=Collect._meta.get_field(
@@ -76,7 +79,7 @@ class CollectAdmin(CollectOrganizationBaseAdmin):
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(CollectPaymentBaseAdmin):
     """Отображение в админ панели платежа для сбора."""
 
     list_filter = (
@@ -84,13 +87,15 @@ class PaymentAdmin(admin.ModelAdmin):
         'user__email',
         )
 
-    list_display = (
-        'user',
-        'comment',
-        'collect',
-        'payment_amount',
-    )
     search_fields = (
         'user__email',
         'collect__name',
     )
+
+    def get_list_display(self, request: WSGIRequest) -> list[str]:
+        """Расширяет поле вывода списка элементов."""
+        return super().get_list_display(request) + [
+            'comment',
+            'collect',
+            'payment_amount',
+            ]
