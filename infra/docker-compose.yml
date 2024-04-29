@@ -58,3 +58,31 @@ services:
     ports:
       - 8000:8000
 
+  celery-worker:
+    restart: always
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+      - redis
+      - backend
+    command: bash -c "cd src && celery -A config worker -l info"
+    env_file: .env
+    volumes:
+      - ../src/:/app/src/
+
+  celery-beat:
+    restart: always
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+      - redis
+      - backend
+      - celery-worker
+    command: bash -c "cd src && celery -A config beat --loglevel=INFO"
+    env_file: .env
+    volumes:
+      - ../src/:/app/src/
