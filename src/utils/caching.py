@@ -126,4 +126,4 @@ class CachedSetMixin(CreateCachedMixin,
                      DestroyCachedMixin,
                      ListCachedMixin,
                      ):
-    """Полный контроль кеширования."""
+    """Полный контроль кэширования."""
