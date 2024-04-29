@@ -10,7 +10,7 @@ from rest_framework.serializers import ModelSerializer
 
 
 def clean_cache_by_tag(tag_cache: str) -> None:
-    """Очищает кэш по по тегу."""
+    """Очищает кэш по тегу."""
     keys = cache.keys(f'{tag_cache}_*')
     cache.delete_many(keys)
 
