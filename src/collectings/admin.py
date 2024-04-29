@@ -1,23 +1,32 @@
 from django.contrib import admin
 from django.core.handlers.wsgi import WSGIRequest
+from django.db.models import Model, QuerySet
+from django.forms import BaseFormSet, Form
 from django.utils.html import format_html
 from django.utils.safestring import SafeText
 
+from api.v1.views import (CollectViewSet, DefaultCoverView, OccasionView,
+                          PaymentView)
 from collectings.constants import DISPLAY_VIDEO_ADMIN
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from core.admin import (BaseAdmin, CollectOrganizationBaseAdmin,
                         CollectPaymentBaseAdmin)
 from core.constants import DISPLAY_IMAGE_ADMIN
+from utils.caching import clean_cache_by_tag
 
 
 @admin.register(Occasion)
 class OccasionAdmin(BaseAdmin):
     """Отображение в админ панели повода для сбора."""
 
+    tag_cache = OccasionView.tag_cache
+
 
 @admin.register(DefaultCover)
 class DefaultCoverAdmin(BaseAdmin):
     """Отображение в админ панели дефолтной обложки."""
+
+    tag_cache = DefaultCoverView.tag_cache
 
     def get_list_display(self, request: WSGIRequest) -> list[str]:
         """Расширяет поле вывода списка элементов."""
@@ -38,6 +47,8 @@ class DefaultCoverAdmin(BaseAdmin):
 @admin.register(Collect)
 class CollectAdmin(CollectOrganizationBaseAdmin, CollectPaymentBaseAdmin):
     """Отображение в админ панели группового денежного сбора."""
+
+    tag_cache = CollectViewSet.tag_cache
 
     list_filter = (
         'organization__name',
@@ -93,6 +104,9 @@ class PaymentAdmin(CollectPaymentBaseAdmin):
         'collect__name',
     )
 
+    tag_cache = PaymentView.tag_cache
+    collect_tag_cache = CollectViewSet.tag_cache
+
     def get_list_display(self, request: WSGIRequest) -> list[str]:
         """Расширяет поле вывода списка элементов."""
         return super().get_list_display(request) + [
@@ -101,3 +115,30 @@ class PaymentAdmin(CollectPaymentBaseAdmin):
             'payment_amount',
             'comment',
             ]
+
+    def save_model(
+            self, request: WSGIRequest, obj: Model, form: Form, change: bool
+            ) -> None:
+        """Очистка кэша сборов."""
+        super().save_model(request, obj, form, change)
+        clean_cache_by_tag(self.collect_tag_cache)
+
+    def delete_model(self, request: WSGIRequest, obj: Model) -> None:
+        """Очистка кэша сборов."""
+        super().delete_model(self, request, obj)
+        clean_cache_by_tag(self.collect_tag_cache)
+
+    def delete_queryset(
+            self, request: WSGIRequest, queryset: QuerySet
+            ) -> None:
+        """Очистка кэша сборов."""
+        super().delete_queryset(request, queryset)
+        clean_cache_by_tag(self.collect_tag_cache)
+
+    def save_formset(
+            self, request: WSGIRequest, form: Form,
+            formset: BaseFormSet, change: bool,
+            ) -> None:
+        """Очистка кэша сборов."""
+        super().save_formset(request, form, formset, change)
+        clean_cache_by_tag(self.collect_tag_cache)

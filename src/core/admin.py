@@ -1,14 +1,49 @@
 from django.contrib import admin
 from django.core.handlers.wsgi import WSGIRequest
-from django.db.models import Model
+from django.db.models import Model, QuerySet
+from django.forms import BaseFormSet, Form
 from django.utils.html import format_html
 from django.utils.safestring import SafeText
 
 from core.constants import DISPLAY_IMAGE_ADMIN
 from core.models import CollectOrganizationBaseModel
+from utils.caching import clean_cache_by_tag
 
 
-class BaseAdmin(admin.ModelAdmin):
+class CleanCacheAdmin(admin.ModelAdmin):
+    """Очиска кэша."""
+
+    tag_cache = None
+
+    def save_model(
+            self, request: WSGIRequest, obj: Model, form: Form, change: bool
+            ) -> None:
+        """Очистка кэша."""
+        super().save_model(request, obj, form, change)
+        clean_cache_by_tag(self.tag_cache)
+
+    def delete_model(self, request: WSGIRequest, obj: Model) -> None:
+        """Очистка кэша."""
+        super().delete_model(self, request, obj)
+        clean_cache_by_tag(self.tag_cache)
+
+    def delete_queryset(
+            self, request: WSGIRequest, queryset: QuerySet
+            ) -> None:
+        """Очистка кэша."""
+        super().delete_queryset(request, queryset)
+        clean_cache_by_tag(self.tag_cache)
+
+    def save_formset(
+            self, request: WSGIRequest, form: Form,
+            formset: BaseFormSet, change: bool,
+            ) -> None:
+        """Очистка кэша."""
+        super().save_formset(request, form, formset, change)
+        clean_cache_by_tag(self.tag_cache)
+
+
+class BaseAdmin(CleanCacheAdmin, admin.ModelAdmin):
     """Базовая модель админ панели."""
     list_display = [
         'name',
@@ -38,7 +73,7 @@ class CollectOrganizationBaseAdmin(BaseAdmin):
         return format_html(DISPLAY_IMAGE_ADMIN.format(obj.cover.url))
 
 
-class CollectPaymentBaseAdmin(admin.ModelAdmin):
+class CollectPaymentBaseAdmin(CleanCacheAdmin, admin.ModelAdmin):
     """Базовая модель админ панели сборов/платежа для сбора."""
 
     list_display = [
