@@ -27,7 +27,6 @@ django-redis = "^5.4.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
-pre-commit = "^3.7.0"
 
 [build-system]
 requires = ["poetry-core"]
