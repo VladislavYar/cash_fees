@@ -162,7 +162,7 @@ class CollectUpdateSerializer(
 
     def validate_close_datetime(self, value: datetime) -> datetime:
         """Валидация даты закрытия сбора."""
-        if value.date() <= localdate():
+        if value and value.date() <= localdate():
             raise serializers.ValidationError(
                 _('Дата окончания должна быть больше текушей даты.')
             )
@@ -180,6 +180,8 @@ class CollectUpdateSerializer(
 
     def validate_url_video(self, value: str) -> str:
         """Валидация url на видео youtube."""
+        if value is None:
+            return
         try:
             v = self._validate_param_v(value)
             value = f'{validate_url(value)}?v={v}'
