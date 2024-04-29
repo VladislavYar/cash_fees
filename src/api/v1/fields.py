@@ -51,7 +51,7 @@ class Base64ImageOrSlugField(Base64ImageField):
         super().__init__(**kwargs)
 
     def _validate_media_slug(self, data: str) -> str:
-        """Валидация slug на изображение."""
+        """Валидация 'check_field' на изображение."""
         model: Model = self.check_model['model']
         check_field = self.check_model['check_field']
         get_field = self.check_model['get_field']
@@ -61,7 +61,7 @@ class Base64ImageOrSlugField(Base64ImageField):
         return getattr(image, get_field)
 
     def to_internal_value(self, data: str) -> ContentFile | str:
-        """Проверка наличия slug на изображение."""
+        """Проверка наличия 'check_field' на изображение."""
         try:
             return super().to_internal_value(data)
         except Exception:
