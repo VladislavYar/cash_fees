@@ -26,6 +26,7 @@ class BaseModel(models.Model):
         always_update=True,
         max_length=MAX_LEN_SLUG,
         unique=True,
+        db_index=True,
         verbose_name=_('Slug-название'),
         help_text=_('Slug-название'),
         db_comment=_('Slug-название'),

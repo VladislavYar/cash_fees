@@ -107,8 +107,12 @@ CELERY_TIMEZONE = TIME_ZONE
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': REDIS_LOCATION,
+        'TIMEOUT': 60 * 8,
+        'OPTIONS': {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
     }
 }
 

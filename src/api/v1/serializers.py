@@ -9,7 +9,7 @@ from youtube_urls_validator import validate_url
 from youtube_urls_validator.utils.exceptions import (
     HostNotInPossibleHostsError, InvalidSchemeError)
 
-from api.v1.fields import Base64ImageField, Base64ImageOrURIField
+from api.v1.fields import Base64ImageField, Base64ImageOrSlugField
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from organizations.models import Organization, Problem, Region
 
@@ -68,7 +68,7 @@ class DefaultCoverSerializer(serializers.ModelSerializer):
     """Сериализатор дефолтных обложек."""
 
     class Meta:
-        fields = ('default_cover',)
+        fields = ('slug', 'default_cover',)
         model = DefaultCover
 
 
@@ -137,8 +137,12 @@ class CollectUpdateSerializer(
     """Сериализатор обновления групповых денежных сборов."""
 
     image = Base64ImageField(allow_null=True, required=False)
-    cover = Base64ImageOrURIField(
-        {'model': DefaultCover, 'check_field': 'default_cover'}
+    cover = Base64ImageOrSlugField(
+        {
+            'model': DefaultCover,
+            'check_field': 'slug',
+            'get_field': 'default_cover',
+            }
         )
 
     class Meta(

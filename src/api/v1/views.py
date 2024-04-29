@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db.models import QuerySet
 from djoser.conf import settings
 from djoser.views import UserViewSet
@@ -24,6 +25,8 @@ from api.v1.serializers import (CollectCreateSerializer,
 from api.v1.tasks import send_mail_celery
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from organizations.models import Organization, Problem, Region
+from utils.caching import (CachedSetMixin, ListCachedMixin,
+                           ListCreateCachedMixin, clean_cache_by_tag)
 from utils.decorators import change_serializer_class
 
 
@@ -59,11 +62,12 @@ class CastomTokenObtainPairView(TokenObtainPairView):
         tags=('Некоммерческая организация',),
     ),
 )
-class ProblemView(ListAPIView):
+class ProblemView(ListCachedMixin, ListAPIView):
     """View вывода списка решаемых проблем."""
 
     queryset = Problem.objects.all()
     serializer_class = ProblemSerializer
+    tag_cache = 'problem'
 
 
 @extend_schema_view(
@@ -74,11 +78,12 @@ class ProblemView(ListAPIView):
         tags=('Некоммерческая организация',),
     ),
 )
-class RegionView(ListAPIView):
+class RegionView(ListCachedMixin, ListAPIView):
     """View вывода списка регионов."""
 
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
+    tag_cache = 'region'
 
 
 @extend_schema_view(
@@ -89,13 +94,14 @@ class RegionView(ListAPIView):
         tags=('Некоммерческая организация',),
     ),
 )
-class OrganizationView(ListAPIView):
+class OrganizationView(ListCachedMixin, ListAPIView):
     """View вывода списка некоммерческих организаций."""
 
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     pagination_class = OrganizationPagination
     filterset_class = OrganizationFilter
+    tag_cache = 'organization'
 
 
 @extend_schema_view(
@@ -106,11 +112,12 @@ class OrganizationView(ListAPIView):
         tags=('Групповой денежный сбор',),
     ),
 )
-class OccasionView(ListAPIView):
+class OccasionView(ListCachedMixin, ListAPIView):
     """View вывода списка поводов сбора."""
 
     queryset = Occasion.objects.all()
     serializer_class = OccasionSerializer
+    tag_cache = 'occasions'
 
 
 @extend_schema_view(
@@ -121,11 +128,12 @@ class OccasionView(ListAPIView):
         tags=('Групповой денежный сбор',),
     ),
 )
-class DefaultCoverView(ListAPIView):
+class DefaultCoverView(ListCachedMixin, ListAPIView):
     """View вывода списка дефолтных обложек."""
 
     queryset = DefaultCover.objects.all()
     serializer_class = DefaultCoverSerializer
+    tag_cache = 'default_cover'
 
 
 @extend_schema_view(
@@ -166,7 +174,7 @@ class DefaultCoverView(ListAPIView):
         tags=('Групповой денежный сбор',),
     ),
 )
-class CollectViewSet(ModelViewSet):
+class CollectViewSet(CachedSetMixin, ModelViewSet):
     """View вывода списка групповых денежных сборов."""
 
     queryset = Collect.objects.all()
@@ -177,6 +185,7 @@ class CollectViewSet(ModelViewSet):
         IsAuthenticatedOrReadOnlyAndUpdateDeleteIsOwner,
         )
     lookup_field = 'slug'
+    tag_cache = 'collect'
 
     def get_serializer_class(self, *args, **kwargs) -> ModelSerializer:
         """Изменяет сериализатор в зависимости от запроса."""
@@ -219,6 +228,7 @@ class CollectViewSet(ModelViewSet):
         instance: Collect = self.get_object()
         instance.is_active = False
         instance.save()
+        clean_cache_by_tag(self.tag_cache)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -236,20 +246,26 @@ class CollectViewSet(ModelViewSet):
         tags=('Групповой денежный сбор',),
     )
 )
-class PaymentView(ListCreateAPIView):
+class PaymentView(ListCreateCachedMixin, ListCreateAPIView):
     """View вывода платежей для сбора."""
 
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = (IsAuthenticated,)
+    tag_cache = 'payment'
 
     def get_queryset(self) -> QuerySet[Payment]:
-        """Отдаёт платежи для сбора пользователя."""
-        return self.queryset.filter(user=self.request.user)
+        """Отдаёт платежи для сбора пользователя и кэширует данные."""
+        queryset = cache.get(f'{self.tag_cache}_queryset')
+        if not queryset:
+            queryset = self.queryset.filter(user=self.request.user)
+            cache.set(f'{self.tag_cache}_queryset', queryset)
+        return queryset
 
     def create(self, request: Request, *args, **kwargs) -> Response:
-        """Cоздаёт task на отправку сообщения."""
+        """Cоздаёт task на отправку сообщения и очищает кэш по сборам."""
         response = super().create(request, *args, **kwargs)
+        clean_cache_by_tag(CollectViewSet.tag_cache)
         send_mail_celery.delay(
             'Create payment',
             'Платеж для сбора создан.',

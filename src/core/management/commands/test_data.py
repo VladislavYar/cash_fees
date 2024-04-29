@@ -246,6 +246,9 @@ class Command(BaseCommand):
                         'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
                         if choice(rand_bool) else None
                         ),
+                    description=(
+                        f'Тестовое описание сбора №{i}'
+                    ),
                     occasion=choice(occasions),
                     required_amount=(
                         required_amount if not choice(rand_bool) else None
