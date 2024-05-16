@@ -1,7 +1,7 @@
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
-from django.db.models import F, Model, Sum
+from django.db.models import Model
 from django.utils.timezone import localdate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -12,6 +12,9 @@ from youtube_urls_validator.utils.exceptions import (
 from api.v1.fields import Base64ImageField, Base64ImageOrSlugField
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from organizations.models import Organization, Problem, Region
+from utils.castom_fields import (get_count_amount_collect,
+                                 get_count_amount_organization,
+                                 get_count_donaters_collect)
 
 
 class BaseSerializer(serializers.ModelSerializer):
@@ -99,9 +102,7 @@ class OrganizationSerializer(CollectOrganizationBaseSerializer):
 
     def get_count_amount(self, obj: Organization) -> int | None:
         """Собранная сумма."""
-        return obj.collectings.aggregate(
-                count_amount=Sum(F('payments__payment_amount'))
-            )['count_amount']
+        return get_count_amount_organization(obj)
 
 
 class PaymentSerializer(CollectPaymentBaseSerializer):
@@ -220,13 +221,11 @@ class CollectCreateSerializer(
 
     def get_count_amount(self, obj: Collect) -> int | None:
         """Собранная сумма."""
-        return obj.payments.aggregate(
-            count_amount=Sum('payment_amount')
-            )['count_amount']
+        return get_count_amount_collect(obj)
 
     def get_count_donaters(self, obj: Collect) -> int:
         """Количество пожертвований."""
-        return obj.payments.values('user').distinct().count()
+        return get_count_donaters_collect(obj)
 
 
 class CollectResponseSerializer(

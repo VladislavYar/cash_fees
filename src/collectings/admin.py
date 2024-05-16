@@ -4,6 +4,7 @@ from django.db.models import Model, QuerySet
 from django.forms import BaseFormSet, Form
 from django.utils.html import format_html
 from django.utils.safestring import SafeText
+from django.utils.translation import gettext_lazy as _
 
 from api.v1.views import (CollectViewSet, DefaultCoverView, OccasionView,
                           PaymentView)
@@ -13,6 +14,8 @@ from core.admin import (BaseAdmin, CollectOrganizationBaseAdmin,
                         CollectPaymentBaseAdmin)
 from core.constants import DISPLAY_IMAGE_ADMIN
 from utils.caching import clean_cache_by_tag
+from utils.castom_fields import (get_count_amount_collect,
+                                 get_count_donaters_collect)
 
 
 @admin.register(Occasion)
@@ -61,6 +64,7 @@ class CollectAdmin(CollectOrganizationBaseAdmin, CollectPaymentBaseAdmin):
         return (
             CollectPaymentBaseAdmin.list_display +
             super().get_list_display(request) + [
+                'display_count_donaters',
                 'display_image',
                 'display_video',
                 'is_active',
@@ -79,7 +83,7 @@ class CollectAdmin(CollectOrganizationBaseAdmin, CollectPaymentBaseAdmin):
 
     @admin.display(
             description=Collect._meta.get_field(
-                'image'
+                'url_video'
                 ).verbose_name
             )
     def display_video(self, obj: Collect) -> SafeText:
@@ -87,6 +91,20 @@ class CollectAdmin(CollectOrganizationBaseAdmin, CollectPaymentBaseAdmin):
         if obj.url_video:
             uri_player = obj.url_video.replace('watch?v=', 'embed/')
             return format_html(DISPLAY_VIDEO_ADMIN.format(uri_player))
+
+    @admin.display(
+            description=_('Собранная сумма')
+            )
+    def display_count_amount(self, obj: Collect) -> SafeText:
+        """Выводит собранную сумму."""
+        return get_count_amount_collect(obj)
+
+    @admin.display(
+            description=_('Количество пожертвований')
+            )
+    def display_count_donaters(self, obj: Collect) -> SafeText:
+        """Выводит количество пожертвований."""
+        return get_count_donaters_collect(obj)
 
 
 @admin.register(Payment)

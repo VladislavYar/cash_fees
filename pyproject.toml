@@ -27,7 +27,14 @@ django-redis = "^5.4.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
+faker = "^25.2.0"
+pytest-django = "^4.8.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = "tests.py test_*.py *_tests.py"

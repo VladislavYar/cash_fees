@@ -11,8 +11,14 @@ from rest_framework.serializers import ModelSerializer
 
 def clean_cache_by_tag(tag_cache: str) -> None:
     """Очищает кэш по тегу."""
-    keys = cache.keys(f'{tag_cache}_*')
+    keys = cache.keys(f'{tag_cache}*')
     cache.delete_many(keys)
+
+
+def clean_group_cache_by_tags(tags_cache: tuple[str]) -> None:
+    """Очищает кэш по тегам."""
+    for tag_cache in tags_cache:
+        clean_cache_by_tag(tag_cache)
 
 
 class QuerysetCachedMixin(GenericAPIView):
@@ -33,7 +39,8 @@ class ListCachedMixin(ListModelMixin):
 
     def list(self, request: Request, *args, **kwargs) -> Response:
         """Кэширование отфильтрованных данных."""
-        key = f'{self.tag_cache}_{dict(request.GET).__str__()}'
+        params = dict(sorted(request.GET.items())).__str__()
+        key = f'{self.tag_cache}_queryset_{params}'
         data = cache.get(key)
         if not data:
             response = super().list(request, *args, **kwargs)
@@ -84,9 +91,26 @@ class RetrieveObjectCachedMixin(RetrieveCachedMixin, ObjectCachedMixin):
 class CleanCachedMixin:
     """Очистка кэша."""
 
-    def clean_cache(self,) -> None:
-        """Очищает кэш по по тегу."""
-        clean_cache_by_tag(self.tag_cache)
+    def clean_cache(self, tag_cache: str) -> None:
+        """Очищает кэш по тегу."""
+        clean_cache_by_tag(tag_cache)
+
+    def clean_group_cache(self, tags_cache: tuple[str]) -> None:
+        """Очищает кэш по тегам."""
+        clean_group_cache_by_tags(tags_cache)
+
+    def clean_cache_update_destroy_object(
+            self,
+            tag_cache: str,
+            lookup: str,
+         ) -> None:
+        """Очищает кэша при удалении/изменении объекта."""
+        tags_cache = (
+            f'{tag_cache}_queryset',
+            f'{tag_cache}_object_{lookup}',
+            f'{tag_cache}_retrieve_{lookup}',
+            )
+        self.clean_group_cache(tags_cache)
 
 
 class CreateCachedMixin(CreateModelMixin, CleanCachedMixin):
@@ -95,7 +119,7 @@ class CreateCachedMixin(CreateModelMixin, CleanCachedMixin):
     def perform_create(self, serializer: ModelSerializer) -> None:
         """Очитска кэша при создании объекта."""
         super().perform_create(serializer)
-        self.clean_cache()
+        self.clean_cache(f'{self.tag_cache}_queryset')
 
 
 class UpdateCachedMixin(UpdateModelMixin, CleanCachedMixin):
@@ -104,7 +128,8 @@ class UpdateCachedMixin(UpdateModelMixin, CleanCachedMixin):
     def perform_update(self, serializer: ModelSerializer) -> None:
         """Очитска кэша при изменении объекта."""
         super().perform_update(serializer)
-        self.clean_cache()
+        lookup = self.kwargs[self.lookup_field]
+        self.clean_cache_update_destroy_object(self.tag_cache, lookup)
 
 
 class DestroyCachedMixin(DestroyModelMixin, CleanCachedMixin):
@@ -113,7 +138,8 @@ class DestroyCachedMixin(DestroyModelMixin, CleanCachedMixin):
     def perform_destroy(self, instance: Model) -> None:
         """Очитска кэша при удалени объекта."""
         super().perform_destroy(instance)
-        self.clean_cache()
+        lookup = self.kwargs[self.lookup_field]
+        self.clean_cache_update_destroy_object(self.tag_cache, lookup)
 
 
 class ListCreateCachedMixin(ListCachedMixin, CreateCachedMixin):
@@ -122,8 +148,10 @@ class ListCreateCachedMixin(ListCachedMixin, CreateCachedMixin):
 
 class CachedSetMixin(CreateCachedMixin,
                      RetrieveCachedMixin,
+                     ObjectCachedMixin,
                      UpdateCachedMixin,
                      DestroyCachedMixin,
                      ListCachedMixin,
+                     QuerysetCachedMixin,
                      ):
     """Полный контроль кэширования."""

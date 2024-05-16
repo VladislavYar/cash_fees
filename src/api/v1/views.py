@@ -26,7 +26,8 @@ from api.v1.tasks import send_mail_celery
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from organizations.models import Organization, Problem, Region
 from utils.caching import (CachedSetMixin, ListCachedMixin,
-                           ListCreateCachedMixin, clean_cache_by_tag)
+                           ListCreateCachedMixin, clean_cache_by_tag,
+                           clean_group_cache_by_tags)
 from utils.decorators import change_serializer_class
 
 
@@ -256,16 +257,34 @@ class PaymentView(ListCreateCachedMixin, ListCreateAPIView):
 
     def get_queryset(self) -> QuerySet[Payment]:
         """Отдаёт платежи для сбора пользователя и кэширует данные."""
-        queryset = cache.get(f'{self.tag_cache}_queryset')
+        user_id = self.request.user.id
+        queryset = cache.get(f'{self.tag_cache}_queryset_{user_id}')
         if not queryset:
             queryset = self.queryset.filter(user=self.request.user)
-            cache.set(f'{self.tag_cache}_queryset', queryset)
+            cache.set(f'{self.tag_cache}_queryset_{user_id}', queryset)
         return queryset
 
+    def _clean_cache(self, request: Request) -> None:
+        """Очистка кэша."""
+        user_id = self.request.user.id
+        lookup = request.data.get('collect')
+        collect = Collect.objects.get(slug=lookup)
+        organization = Collect.objects.get(slug=lookup).organization
+        tags_cache = (
+            f'{CollectViewSet.tag_cache}_queryset',
+            f'{CollectViewSet.tag_cache}_object_{lookup}',
+            f'{CollectViewSet.tag_cache}_retrieve_{lookup}',
+            f'{self.tag_cache}_queryset_{user_id}',
+            f'count_amount_collect_{collect.id}',
+            f'count_donaters_collect_{collect.id}',
+            f'count_amount_organization_{organization.id}',
+        )
+        clean_group_cache_by_tags(tags_cache)
+
     def create(self, request: Request, *args, **kwargs) -> Response:
-        """Cоздаёт task на отправку сообщения и очищает кэш по сборам."""
+        """Cоздаёт task на отправку сообщения и очищает кэш."""
         response = super().create(request, *args, **kwargs)
-        clean_cache_by_tag(CollectViewSet.tag_cache)
+        self._clean_cache(request)
         send_mail_celery.delay(
             'Create payment',
             'Платеж для сбора создан.',

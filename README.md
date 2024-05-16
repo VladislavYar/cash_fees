@@ -10,7 +10,6 @@
   <p align="center">Поле <code>cover</code> может принимать как <code>base64-строку</code>, так и <code>slug</code> <i>дефолтной обложки</i>.</p>
   <p align="center">Эндпоинт <code>DELETE: /api/v1/collectings/{slug}/</code> не удаляет объект, а делает его неактивным.</p>
   <p align="center"><code>Celery</code>(для эмуляции) с периодичность запускает <i>task-у</i>, которая изменяет статус платежа на <code>True</code>.</p>
-  <p align="center">Email-ы выводятся в <i>консоль/контейнер</i> с <code>Celery worker</code>.</p>
 <hr>
 
 <h3 align="center">Как запустить</h3>

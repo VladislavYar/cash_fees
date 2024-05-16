@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.core.handlers.wsgi import WSGIRequest
 from django.utils.safestring import SafeText
+from django.utils.translation import gettext_lazy as _
 
 from api.v1.views import OrganizationView, ProblemView, RegionView
 from core.admin import BaseAdmin, CollectOrganizationBaseAdmin
 from organizations.models import Organization, Problem, Region
+from utils.castom_fields import get_count_amount_organization
 
 
 @admin.register(Region)
@@ -49,3 +51,10 @@ class OrganizationAdmin(CollectOrganizationBaseAdmin):
         return str.join(
             ', ', obj.problems.all().values_list('name', flat=True)
             )
+
+    @admin.display(
+            description=_('Собранная сумма')
+            )
+    def display_count_amount(self, obj: Organization) -> SafeText:
+        """Выводит собранную сумму."""
+        return get_count_amount_organization(obj)

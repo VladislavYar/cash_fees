@@ -61,7 +61,7 @@ class CollectOrganizationBaseAdmin(BaseAdmin):
 
     def get_list_display(self, request: WSGIRequest) -> list[str]:
         """Расширяет поле вывода списка элементов."""
-        return self.list_display + ['display_cover']
+        return self.list_display + ['display_cover', 'display_count_amount']
 
     @admin.display(
             description=CollectOrganizationBaseModel._meta.get_field(
