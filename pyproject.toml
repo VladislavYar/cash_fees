@@ -23,6 +23,7 @@ django-resized = "^1.0.2"
 django-filter = "^24.2"
 youtube-urls-validator = "^0.0.1"
 django-redis = "^5.4.0"
+yookassa = "^3.1.0"
 
 
 [tool.poetry.group.dev.dependencies]

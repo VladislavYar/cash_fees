@@ -86,3 +86,10 @@ services:
     env_file: .env
     volumes:
       - ../src/:/app/src/
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
