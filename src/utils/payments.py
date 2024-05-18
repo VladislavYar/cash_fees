@@ -35,7 +35,7 @@ def create_payment(
 
             },
             'save_payment_method': False,
-            'capture': False,
+            'capture': True,
             'description': f'Пожертвование на "{collect.name}"',
         }
     )
@@ -52,31 +52,33 @@ def clean_cache(data_clean_cache: list[dict[str, str]]) -> None:
         collect_id = data['collect_id']
         lookup = data['collect_lookup']
         user_id = data['user_id']
+        status = data['status']
+        tags_cache.append(f'{payment_tag_cache}_queryset_{user_id}')
+        if status != 'succeeded':
+            continue
         organization_id = Collect.objects.get(id=collect_id).organization.id
         tags_cache.extend(
                 (
-                    f'{payment_tag_cache.tag_cache}_object_{lookup}',
-                    f'{payment_tag_cache.tag_cache}_retrieve_{lookup}',
-                    f'{payment_tag_cache.tag_cache}_queryset_{user_id}',
+                    f'{collect_tag_cache}_object_{lookup}',
+                    f'{collect_tag_cache}_retrieve_{lookup}',
                     f'count_amount_collect_{collect_id}',
                     f'count_donaters_collect_{collect_id}',
                     f'count_amount_organization_{organization_id}',
+                    f'{collect_tag_cache}_queryset',
                 )
             )
-    tags_cache.append(f'{collect_tag_cache}_queryset')
     clean_group_cache_by_tags(set(tags_cache))
 
 
 def check_payments(payments: list[PaymentResponse]) -> None:
     """Проверка платежей."""
+    data_clean_cache = []
     for payment in payments:
-        print(f'Статус платежа: {payment.status}')
         payment_id = payment.metadata['payment_id']
         collect_lookup = payment.metadata['collect_lookup']
         user_id = payment.metadata['user_id']
         collect_id = payment.metadata['collect_id']
         payment_obj = Payment.objects.get(id=payment_id)
-        data_clean_cache = []
         if payment.status == 'waiting_for_capture':
             response = YookassaPayment.capture(payment.id)
             payment_obj.status = response.status
@@ -86,6 +88,7 @@ def check_payments(payments: list[PaymentResponse]) -> None:
                         'collect_lookup': collect_lookup,
                         'collect_id': collect_id,
                         'user_id': user_id,
+                        'status': response.status,
                     }
                 )
         elif payment_obj.status != payment.status:
@@ -96,24 +99,24 @@ def check_payments(payments: list[PaymentResponse]) -> None:
                         'collect_lookup': collect_lookup,
                         'collect_id': collect_id,
                         'user_id': user_id,
+                        'status': payment.status,
                     }
                 )
-        if data_clean_cache:
-            clean_cache(data_clean_cache)
+    if data_clean_cache:
+        clean_cache(data_clean_cache)
 
 
 def status_payments(cursor=None) -> None:
     """Проверка статуса платежей."""
-    created_at_gte = (localtime() - timedelta(minutes=10)).isoformat()
+    created_at_gte = (localtime() - timedelta(minutes=30)).isoformat()
     payments = YookassaPayment.list(
                     params={
                         'created_at.gte': created_at_gte,
-                        'limit': 1,
+                        'limit': 100,
                         'cursor': cursor,
                         }
                 )
     next_cursor = payments.next_cursor
-    print(f'Следующие платежи: {next_cursor}')
     check_payments(payments.items)
     if next_cursor:
         status_payments(next_cursor)
