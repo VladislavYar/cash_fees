@@ -19,16 +19,16 @@ from api.v1.permissions import IsAuthenticatedOrReadOnlyAndUpdateDeleteIsOwner
 from api.v1.serializers import (CollectCreateSerializer,
                                 CollectResponseSerializer,
                                 CollectUpdateSerializer,
+                                ConfirmationUrlSerializer,
                                 DefaultCoverSerializer, OccasionSerializer,
                                 OrganizationSerializer, PaymentSerializer,
                                 ProblemSerializer, RegionSerializer)
 from api.v1.tasks import send_mail_celery
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from organizations.models import Organization, Problem, Region
-from utils.caching import (CachedSetMixin, ListCachedMixin,
-                           ListCreateCachedMixin, clean_cache_by_tag,
-                           clean_group_cache_by_tags)
+from utils.caching import CachedSetMixin, ListCachedMixin, clean_cache_by_tag
 from utils.decorators import change_serializer_class
+from utils.payments import create_payment
 
 
 @extend_schema_view(
@@ -241,13 +241,13 @@ class CollectViewSet(CachedSetMixin, ModelViewSet):
         tags=('Групповой денежный сбор',),
     ),
     post=extend_schema(
-        responses={201: PaymentSerializer(many=True)},
+        responses={201: ConfirmationUrlSerializer},
         summary='Создать платёж для сбора',
         description='Создаёт платеже для сбора',
         tags=('Групповой денежный сбор',),
     )
 )
-class PaymentView(ListCreateCachedMixin, ListCreateAPIView):
+class PaymentView(ListCreateAPIView):
     """View вывода платежей для сбора."""
 
     queryset = Payment.objects.all()
@@ -264,30 +264,32 @@ class PaymentView(ListCreateCachedMixin, ListCreateAPIView):
             cache.set(f'{self.tag_cache}_queryset_{user_id}', queryset)
         return queryset
 
-    def _clean_cache(self, request: Request) -> None:
-        """Очистка кэша."""
-        user_id = self.request.user.id
-        lookup = request.data.get('collect')
-        collect = Collect.objects.get(slug=lookup)
-        organization = Collect.objects.get(slug=lookup).organization
-        tags_cache = (
-            f'{CollectViewSet.tag_cache}_queryset',
-            f'{CollectViewSet.tag_cache}_object_{lookup}',
-            f'{CollectViewSet.tag_cache}_retrieve_{lookup}',
-            f'{self.tag_cache}_queryset_{user_id}',
-            f'count_amount_collect_{collect.id}',
-            f'count_donaters_collect_{collect.id}',
-            f'count_amount_organization_{organization.id}',
-        )
-        clean_group_cache_by_tags(tags_cache)
+    def perform_create(self, serializer: ModelSerializer) -> None:
+        """
+        Cохранение объекта в свойство.
+        """
+        self.obj_save = serializer.save()
 
+    @change_serializer_class(serializer=ConfirmationUrlSerializer)
     def create(self, request: Request, *args, **kwargs) -> Response:
-        """Cоздаёт task на отправку сообщения и очищает кэш."""
+        """Cоздаёт оплату и очищает кэш."""
         response = super().create(request, *args, **kwargs)
-        self._clean_cache(request)
+
+        user_id = self.request.user.id
+        tag_cache = f'{self.tag_cache}_queryset_{user_id}'
+        clean_cache_by_tag(tag_cache)
+
+        lookup = response.data.get('collect')
+        collect = Collect.objects.get(slug=lookup)
+        amount = int(response.data.get('payment_amount'))
+        confirmation_url = create_payment(
+            collect, lookup, amount, self.obj_save.id, user_id,
+            )
+
         send_mail_celery.delay(
             'Create payment',
-            'Платеж для сбора создан.',
+            f'Платеж для сбора создан. Оплатите по ссылке: {confirmation_url}',
             (request.user.email,)
         )
+        response.data['confirmation_url'] = confirmation_url
         return response

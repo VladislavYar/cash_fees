@@ -244,3 +244,12 @@ class CollectResponseSerializer(
                 'payments',
             ]
         )
+
+
+class ConfirmationUrlSerializer(serializers.Serializer):
+    """Сериализатор ссылки на оплату."""
+
+    confirmation_url = serializers.URLField()
+
+    class Meta:
+        fields = ('confirmation_url',)

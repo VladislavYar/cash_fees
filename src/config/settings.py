@@ -4,6 +4,7 @@ from pathlib import Path
 
 from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
+from yookassa import Configuration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -184,3 +185,12 @@ EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'True')
 EMAIL_SERVER = EMAIL_HOST_USER
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 EMAIL_ADMIN = EMAIL_HOST_USER
+
+
+Configuration.configure(
+    os.getenv('SHOP_ID', default='test'),
+    os.getenv('TOKEN_YOOKASSA', default='test'),
+    )
+YOOKASA_RETURN_URL = os.getenv(
+    'YOOKASA_RETURN_URL', default='http://127.0.0.1:8000/api/v1/docs/',
+    )

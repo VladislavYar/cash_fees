@@ -4,11 +4,13 @@ from django.utils.translation import gettext_lazy as _
 from django_resized import ResizedImageField
 
 from collectings.constants import (MAX_PAYMENT_AMOUNT, MAX_REQUIRED_AMOUNT,
-                                   MIN_PAYMENT_AMOUNT, MIN_REQUIRED_AMOUNT)
+                                   MIN_PAYMENT_AMOUNT, MIN_REQUIRED_AMOUNT,
+                                   STATUSES)
 from core.constants import MAX_IMAGE_SIZE
 from core.models import (BaseModel, CollectOrganizationBaseModel,
                          CollectPaymentBaseModel)
 from organizations.models import Organization
+from utils.models import max_len_status
 
 
 class Occasion(BaseModel):
@@ -126,8 +128,10 @@ class Payment(CollectPaymentBaseModel):
             MaxValueValidator(MAX_PAYMENT_AMOUNT),
             )
     )
-    status = models.BooleanField(
-        default=False,
+    status = models.CharField(
+        max_length=max_len_status(STATUSES),
+        default=STATUSES[0][0],
+        choices=STATUSES,
         verbose_name=_('Статус платежа'),
         help_text=_('Статус платежа'),
         db_comment=_('Статус платежа'),

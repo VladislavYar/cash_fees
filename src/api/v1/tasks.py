@@ -2,8 +2,9 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.utils.timezone import localdate
 
-from collectings.models import Collect, Payment
+from collectings.models import Collect
 from config.celery import app
+from utils.payments import status_payments
 
 
 @app.task
@@ -21,11 +22,9 @@ def send_mail_celery(
 
 
 @app.task
-def status_true_payment() -> None:
-    """
-    Изменяет статус платежей на True(эмуляция оплаты).
-    """
-    Payment.objects.filter(status=False).update(status=True)
+def status_payments_celery() -> None:
+    """Проверка статуса платежей."""
+    status_payments()
 
 
 @app.task

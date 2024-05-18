@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from django.core.cache import cache
 from django.db.models import Model, QuerySet
 from rest_framework.generics import GenericAPIView
@@ -15,7 +17,7 @@ def clean_cache_by_tag(tag_cache: str) -> None:
     cache.delete_many(keys)
 
 
-def clean_group_cache_by_tags(tags_cache: tuple[str]) -> None:
+def clean_group_cache_by_tags(tags_cache: Iterable[str]) -> None:
     """Очищает кэш по тегам."""
     for tag_cache in tags_cache:
         clean_cache_by_tag(tag_cache)

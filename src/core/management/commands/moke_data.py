@@ -13,7 +13,8 @@ from django.utils.timezone import localtime
 from faker import Faker
 
 from collectings.constants import (MAX_PAYMENT_AMOUNT, MAX_REQUIRED_AMOUNT,
-                                   MIN_PAYMENT_AMOUNT, MIN_REQUIRED_AMOUNT)
+                                   MIN_PAYMENT_AMOUNT, MIN_REQUIRED_AMOUNT,
+                                   STATUSES)
 from collectings.models import Collect, DefaultCover, Occasion, Payment
 from core.constants import MAX_LEN_NAME
 from organizations.models import Organization, Problem, Region
@@ -283,6 +284,7 @@ class Command(BaseCommand):
                     user_first_name=name[0],
                     user_last_name=name[1],
                     collect=choice(collectings),
+                    status=choice(STATUSES)[0],
                     comment=(
                         fake.text()
                         if not choice(rand_bool) else None
@@ -319,4 +321,4 @@ class Command(BaseCommand):
         collectings = self._create_collectings(
             users, organizations, occasions, rand_bool, fake, 3000,
             )
-        self._create_payments(users, collectings, rand_bool, fake, 10000)
+        # self._create_payments(users, collectings, rand_bool, fake, 10000)

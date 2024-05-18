@@ -5,6 +5,7 @@
   <hr>
   <h3>Примечания</h3>
 </div>
+  <p align="center">Платежи интегрированы через сервис <a href="https://yookassa.ru/">ЮKassa</a>, <a href="https://github.com/yoomoney/yookassa-sdk-python">ссылка на SDK</a>.</p>
   <p align="center">В проекте доступна swagger-документация по адресу <code>/api/v1/docs/</code>.</p>
   <p align="center">Эндпоинты пользователя ограничены для простоты восприятия.</p>
   <p align="center">Поле <code>cover</code> может принимать как <code>base64-строку</code>, так и <code>slug</code> <i>дефолтной обложки</i>.</p>

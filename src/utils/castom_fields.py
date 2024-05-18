@@ -11,7 +11,9 @@ def get_count_amount_collect(obj: Collect) -> int | None:
     count_amount = cache.get(key)
     if count_amount:
         return count_amount
-    count_amount = obj.payments.aggregate(
+    count_amount = obj.payments.filter(
+        status='succeeded'
+        ).aggregate(
         count_amount=Sum('payment_amount')
         )['count_amount']
     cache.set(key, count_amount)
@@ -24,7 +26,9 @@ def get_count_donaters_collect(obj: Collect) -> int | None:
     count_donaters = cache.get(key)
     if count_donaters:
         return count_donaters
-    count_donaters = obj.payments.values('user').distinct().count()
+    count_donaters = obj.payments.filter(
+        status='succeeded'
+        ).values('user').distinct().count()
     cache.set(key, count_donaters)
     return count_donaters
 

@@ -9,9 +9,9 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    'status_true_payment': {
-        'task': 'api.v1.tasks.status_true_payment',
-        'schedule': crontab(minute='*/1'),
+    'status_payments': {
+        'task': 'api.v1.tasks.status_payments_celery',
+        'schedule': 5.0,
     },
     'check_close_datetime_collect': {
         'task': 'api.v1.tasks.check_close_datetime_collect',
