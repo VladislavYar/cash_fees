@@ -10,7 +10,6 @@
   <p align="center">Эндпоинты пользователя ограничены для простоты восприятия.</p>
   <p align="center">Поле <code>cover</code> может принимать как <code>base64-строку</code>, так и <code>slug</code> <i>дефолтной обложки</i>.</p>
   <p align="center">Эндпоинт <code>DELETE: /api/v1/collectings/{slug}/</code> не удаляет объект, а делает его неактивным.</p>
-  <p align="center"><code>Celery</code>(для эмуляции) с периодичность запускает <i>task-у</i>, которая изменяет статус платежа на <code>True</code>.</p>
 <hr>
 
 <h3 align="center">Как запустить</h3>
@@ -106,5 +105,6 @@
   <img src="https://img.shields.io/badge/Docker-Latest-red?style=flat&logo=docker&logoColor=white">
   <img src="https://img.shields.io/badge/Swagger-Latest-red?style=flat&logo=swagger&logoColor=white">
   <img src="https://img.shields.io/badge/Poetry-Latest-red?style=flat&logo=poetry&logoColor=white">
+  <img src="https://img.shields.io/badge/YookassaSdkPython-Latest-red?style=flat">
 </p>
 <hr>
