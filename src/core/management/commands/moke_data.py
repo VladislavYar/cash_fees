@@ -321,4 +321,4 @@ class Command(BaseCommand):
         collectings = self._create_collectings(
             users, organizations, occasions, rand_bool, fake, 3000,
             )
-        # self._create_payments(users, collectings, rand_bool, fake, 10000)
+        self._create_payments(users, collectings, rand_bool, fake, 10000)

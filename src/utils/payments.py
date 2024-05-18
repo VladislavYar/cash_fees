@@ -35,7 +35,7 @@ def create_payment(
 
             },
             'save_payment_method': False,
-            'capture': True,
+            'capture': False,
             'description': f'Пожертвование на "{collect.name}"',
         }
     )
@@ -51,7 +51,7 @@ def clean_cache(data_clean_cache: list[dict[str, str]]) -> None:
     for data in data_clean_cache:
         collect_id = data['collect_id']
         lookup = data['collect_lookup']
-        user_id = data['{user_id']
+        user_id = data['user_id']
         organization_id = Collect.objects.get(id=collect_id).organization.id
         tags_cache.extend(
                 (
@@ -78,7 +78,7 @@ def check_payments(payments: list[PaymentResponse]) -> None:
         payment_obj = Payment.objects.get(id=payment_id)
         data_clean_cache = []
         if payment.status == 'waiting_for_capture':
-            response = Payment.capture(payment.id)
+            response = YookassaPayment.capture(payment.id)
             payment_obj.status = response.status
             payment_obj.save()
             data_clean_cache.append(
