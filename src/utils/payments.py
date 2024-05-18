@@ -70,8 +70,8 @@ def clean_cache(data_clean_cache: list[dict[str, str]]) -> None:
     clean_group_cache_by_tags(set(tags_cache))
 
 
-def check_payments(payments: list[PaymentResponse]) -> None:
-    """Проверка платежей."""
+def status_payments(payments: list[PaymentResponse]) -> None:
+    """Проверка статуса платежей."""
     data_clean_cache = []
     for payment in payments:
         payment_id = payment.metadata['payment_id']
@@ -106,8 +106,8 @@ def check_payments(payments: list[PaymentResponse]) -> None:
         clean_cache(data_clean_cache)
 
 
-def status_payments(cursor=None) -> None:
-    """Проверка статуса платежей."""
+def check_payments(cursor: str | None = None) -> None:
+    """Проверка платежей."""
     created_at_gte = (localtime() - timedelta(minutes=30)).isoformat()
     payments = YookassaPayment.list(
                     params={
@@ -117,6 +117,6 @@ def status_payments(cursor=None) -> None:
                         }
                 )
     next_cursor = payments.next_cursor
-    check_payments(payments.items)
+    status_payments(payments.items)
     if next_cursor:
-        status_payments(next_cursor)
+        check_payments(next_cursor)

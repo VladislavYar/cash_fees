@@ -4,7 +4,7 @@ from django.utils.timezone import localdate
 
 from collectings.models import Collect
 from config.celery import app
-from utils.payments import status_payments
+from utils.payments import check_payments
 
 
 @app.task
@@ -22,9 +22,9 @@ def send_mail_celery(
 
 
 @app.task
-def status_payments_celery() -> None:
-    """Проверка статуса платежей."""
-    status_payments()
+def check_payments_celery() -> None:
+    """Проверка платежей."""
+    check_payments()
 
 
 @app.task
